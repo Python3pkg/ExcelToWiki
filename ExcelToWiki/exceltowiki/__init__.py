@@ -67,9 +67,9 @@ def HTMLColorToRGB(colorstring):
     colorstring = colorstring.strip()
     if colorstring[0] == '#': colorstring = colorstring[1:]
     if len(colorstring) != 6:
-        raise ValueError, "input #%s is not in #RRGGBB format" % colorstring
+        raise ValueError("input #%s is not in #RRGGBB format" % colorstring)
     if re.match("[a-fA-F0-9]",colorstring) == None:
-        raise ValueError, "input #%s is not a hex representation of #RRGGBB " % colorstring
+        raise ValueError("input #%s is not a hex representation of #RRGGBB " % colorstring)
         
     r, g, b = colorstring[:2], colorstring[2:4], colorstring[4:]
     r, g, b = [int(n, 16) for n in (r, g, b)]
@@ -149,27 +149,27 @@ def wikiStyle(style,passthrough=None):
     """ passthrough is a list of uninspected style items"""
     span=[]
     resstyle=[]
-    if style.has_key("bg") and style["bg"] != None:
+    if "bg" in style and style["bg"] != None:
         resstyle.append("background-color:%s"%style["bg"])
-    if style.has_key("fg") and style["fg"] != None:
+    if "fg" in style and style["fg"] != None:
         resstyle.append("color:%s"%style["fg"])
-    if style.has_key("font_name"):
+    if "font_name" in style:
         resstyle.append("font-family:%s"%style["font_name"])
-    if style.has_key("bold") and style["bold"]:
+    if "bold" in style and style["bold"]:
         resstyle.append("font-weight:bold")
-    if style.has_key("italics") and style["italics"]:
+    if "italics" in style and style["italics"]:
         resstyle.append("font-style:italic")
-    if style.has_key("underline") and style["underline"]:
+    if "underline" in style and style["underline"]:
         resstyle.append("text-decoration:underline")
-    elif style.has_key("strike") and style["strike"]:
+    elif "strike" in style and style["strike"]:
         resstyle.append("text-decoration:line-through")
-    if style.has_key("width") and style['width'] != None:
+    if "width" in style and style['width'] != None:
         resstyle.append("width:%sin"%(style["width"]/12))
-    if style.has_key("colspan") and style["colspan"] !=None:
+    if "colspan" in style and style["colspan"] !=None:
         span.append("colspan=%s"%(style["colspan"]))
-    if style.has_key("rowspan") and style["rowspan"] !=None:
+    if "rowspan" in style and style["rowspan"] !=None:
         span.append("rowspan=%s"%(style["rowspan"]))
-    if style.has_key("align") and style["align"] != None:
+    if "align" in style and style["align"] != None:
         align="""align="%s" """%style["align"]
     else:
         align=""
@@ -232,7 +232,7 @@ class wikiCell():
             if cell.value == None:
                 cval="&nbsp;"
             else:
-                if isinstance(cell.value, unicode):
+                if isinstance(cell.value, str):
                     cval=cell.value.strip()
                 if cell.is_date:
                     cval=self.__doDateFmt()
@@ -242,9 +242,9 @@ class wikiCell():
                         fmtStr = "%0d%%"
                     else:
                         fmtStr = "%" + str(dotind) + ".%d"%(len(cell.number_format) - dotind - 2) + "f%%"
-                    cval = unicode(fmtStr % (cell.value * 100),'utf-8')
+                    cval = str(fmtStr % (cell.value * 100),'utf-8')
                 else:
-                    cval=unicode(str(cell.value),'utf-8').strip()
+                    cval=str(str(cell.value),'utf-8').strip()
         except:
                 cval="" # not sure what to do here
             
@@ -324,10 +324,10 @@ class wikiCell():
             AMPM=True
         fmt=False
         for tok in re.split(r'([dmyh:]+|[ ]+|\W+)',self.cell.number_format):
-            if strfdatemap.has_key(tok):
+            if tok in strfdatemap:
                 fmt=True
                 strfstr+=strfdatemap[tok]
-            elif strftimemap.has_key(tok):
+            elif tok in strftimemap:
                 fmt=True
                 if AMPM:
                     strfstr+=strftimemap[tok].replace("H","I")+"%p"
@@ -347,7 +347,7 @@ class wikiCell():
         for style in self.style:
             if style not in rowstyle:
                 cellstyle[style]=self.style[style]
-        if colwidths!=None and colwidths.has_key(self.col) and colwidths[self.col] != None:
+        if colwidths!=None and self.col in colwidths and colwidths[self.col] != None:
             cellstyle["width"]=colwidths[self.col]
             
         wikiCellStyle= wikiStyle(cellstyle)
@@ -385,7 +385,7 @@ class wikiRow():
         col,rownum=coordinate_from_string(cell.coordinate)
         if preserve_width ==True and rownum==1:
             colwidths = getColumnWidths(ws)
-            if colwidths.has_key(col):
+            if col in colwidths:
                 width=colwidths[col]
         else:
             colwidths=None
@@ -394,7 +394,7 @@ class wikiRow():
         cellList=[]
         for cell in celllist:
             if not cell.merged:
-                cellList.append(cell.getWikiStr(self.style.keys(),colwidths))
+                cellList.append(cell.getWikiStr(list(self.style.keys()),colwidths))
         # also handle the special case of using single pipe when a return character is encountered
         self.rowwiki+=("|| ".join(cellList)+"\n").replace("\n||","\n|") 
 
@@ -433,20 +433,20 @@ class wikiTbl():
         wikitblstr="{| border=1 %s\n" % wikiStyle(self.style,["border-collapse: collapse; border-color: #aaaaaa"]) 
         wikitblstr+="|+%s %s\n"%(self.capstyle,self.shtname)
         for row in self.rowList:
-            wikitblstr+=row.getWikiStr(self.style.keys())
+            wikitblstr+=row.getWikiStr(list(self.style.keys()))
         wikitblstr+="|}"
         return wikitblstr
 
 def commonStyle(styleList):
     comstyle={}
     for style in styleList:
-        for key,val in style.iteritems():
-            if comstyle.has_key(key):
+        for key,val in style.items():
+            if key in comstyle:
                 comstyle[key].append(val)
             else:
                 comstyle[key]=[val]
     cunique={}
-    for ck,cv in comstyle.iteritems():
+    for ck,cv in comstyle.items():
         scv = list(set(cv))
         if len(cv) == len(styleList) and len(scv)==1 and scv[0] != None and scv[0] != False and scv[0] != 0:
             cunique[ck]=scv[0]
@@ -455,7 +455,7 @@ def commonStyle(styleList):
 
 def getColumnWidths(ws):
     """returns column widths of a worksheet"""
-    colwidths={k:v.width for k,v in ws.column_dimensions.iteritems()}
+    colwidths={k:v.width for k,v in ws.column_dimensions.items()}
     return colwidths
 
 class excelToWiki():
@@ -474,7 +474,7 @@ class excelToWiki():
         try:
             self.wb = load_workbook(wb,data_only=True)
         except:
-            print sys.exc_info()
+            print(sys.exc_info())
             raise Exception("Could not load excel workbook")
         if len(shtnames)>0:
             self.sheetnames=shtnames
@@ -497,12 +497,12 @@ class excelToWiki():
 
     def getWorkbook(self):
         wikitext=""
-        for k,v in self.wikitblmap.iteritems():
+        for k,v in self.wikitblmap.items():
             wikitext+=v+"\n"
         return wikitext
             
     def getSheet(self,shtname):
-        if self.wikitblmap.has_key(shtname):
+        if shtname in self.wikitblmap:
             return self.wikitblmap[shtname]
         else:
             return None
